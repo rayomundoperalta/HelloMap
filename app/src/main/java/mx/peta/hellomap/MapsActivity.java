@@ -1,7 +1,11 @@
 package mx.peta.hellomap;
 
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.provider.MediaStore;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -16,6 +20,8 @@ import mx.peta.hellomap.servicios.ServicioGPS;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private ImageView mImageView;
+    private Bitmap mImageBitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +31,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         ServicioGPS servicioGPS = new ServicioGPS(getApplicationContext());
         TextView t = (TextView) findViewById(R.id.textoUbicacion);
         servicioGPS.setView(t);
+
+        mImageView = (ImageView) findViewById(R.id.imageView1);
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(takePictureIntent, 100);
+        }
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -51,5 +63,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LatLng mexico = new LatLng(19.341822116645, -99.183682);
         mMap.addMarker(new MarkerOptions().title("México").position(mexico).snippet("Marker in México"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mexico, 13));
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 100 && resultCode == RESULT_OK) {
+            Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            mImageView.setImageBitmap(imageBitmap);
+        }
     }
 }

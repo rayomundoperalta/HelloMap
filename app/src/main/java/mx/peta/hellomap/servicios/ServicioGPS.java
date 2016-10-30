@@ -14,6 +14,7 @@ import android.widget.TextView;
 
 /**
  * Created by rayo on 10/29/16.
+ * Developer information in https://developer.android.com/index.html -> DEVELP -> API Guides
  */
 
 public class ServicioGPS extends Service implements LocationListener{
@@ -57,6 +58,7 @@ public class ServicioGPS extends Service implements LocationListener{
             location = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
             latitud = location.getLatitude();
             longitud = location.getLongitude();
+            locationManager.removeUpdates(this);
         }
     }
 
