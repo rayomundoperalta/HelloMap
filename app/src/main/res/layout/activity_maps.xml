@@ -25,6 +25,7 @@
         android:visibility="visible"
         android:id="@+id/imageView1"
         android:layout_weight="3"/>
+
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:map="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"

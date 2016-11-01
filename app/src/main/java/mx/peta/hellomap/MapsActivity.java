@@ -1,19 +1,19 @@
 package mx.peta.hellomap;
 
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import android.net.Uri;
+import android.graphics.Point;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-import android.support.v4.content.FileProvider;
 import android.text.format.DateFormat;
-import android.view.MotionEvent;
+import android.view.Display;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -28,28 +28,25 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
 import mx.peta.hellomap.servicios.ServicioGPS;
 
-import static android.R.attr.bitmap;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private ImageView mImageView;
-    private Bitmap mImageBitmap;
     private Button btnFin;
 
     File photoFile = null;
 
     int count = 0;
+    String bitmapFileName = null;
+    String carpetaPropiedades;
 
     @Override
     protected void onResume() {
@@ -60,6 +57,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        // creamos la carpeta en donde vamos a guardar los thumbnail
+        carpetaPropiedades = verificarCrearCarpeta("propiedades");
 
         ServicioGPS servicioGPS = new ServicioGPS(getApplicationContext());
         TextView t = (TextView) findViewById(R.id.textoUbicacion);
@@ -82,28 +82,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mImageView = (ImageView) findViewById(R.id.imageView1);
         mImageView.setClickable(true);
 
-        mImageView.setOnClickListener(new View.OnClickListener() {
 
+        mImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Toast.makeText(getApplicationContext(), "Image Touch", Toast.LENGTH_LONG).show();
             }
         });
 
-        //mImageView.setImageURI(Uri.fromFile(testCreateImageFile()));
+        /*
         String path = testCreateImageFile().getAbsolutePath();
-        Bitmap bitmap=null;
-        //File f= new File(path);
-        //BitmapFactory.Options options = new BitmapFactory.Options();
-        //options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        Bitmap bitmap;
 
-        //try {
-        //    bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
-        //} catch (FileNotFoundException e) {
-        //    e.printStackTrace();
-        //    Toast.makeText(getApplicationContext(),e.toString(),Toast.LENGTH_LONG).show();
-        //}
-        //mImageView.setImageBitmap(bitmap);
         bitmap = BitmapFactory.decodeFile(path);
         int bAlto = bitmap.getHeight();
         int bAncho = bitmap.getWidth();
@@ -111,23 +101,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         float scale = Math.min((float) 150.0 / (float) bAlto, (float) 150.0 / (float) bAncho);
         Bitmap chico = Bitmap.createScaledBitmap(bitmap,(int)(bAncho*scale), (int)(bAlto*scale), true);
         mImageView.setImageBitmap(chico);
+        */
 
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         // Se verifica si hay una aplicacion que pueda tomar la foto
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             // se crea el archivo donde se guardara la foto
-            photoFile = createImageFile();
+            //photoFile = createImageFile();
 
-            if (photoFile != null) {
-                Uri photoURI = Uri.fromFile(photoFile);
-                //Toast.makeText(getApplicationContext(),  photoURI.toString(),Toast.LENGTH_LONG).show();
-                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-            }
+            //if (photoFile != null) {
+            //    Uri photoURI = Uri.fromFile(photoFile);
+            //Toast.makeText(getApplicationContext(),  photoURI.toString(),Toast.LENGTH_LONG).show();
+            //    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+            //}
             ++count;
-            Toast.makeText(getApplicationContext(), "Count " + count, Toast.LENGTH_LONG).show();
-            Toast.makeText(getApplicationContext(), "Count " + count, Toast.LENGTH_LONG).show();
-            // startActivityForResult(takePictureIntent, 100);
+            System.out.println("Inmobilia mainActivity.onCreate count = " + count);
+            startActivityForResult(takePictureIntent, 100);
         }
+
+        // creamos la carpeta en donde vamos a guardar los thumbnail
+
     }
 
 
@@ -147,28 +140,64 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Add a marker in Sydney and move the camera
         //mMap.setMyLocationEnabled(true);
         LatLng mexico = new LatLng(19.341822116645, -99.183682);
-        mMap.addMarker(new MarkerOptions().title("México").position(mexico).snippet("Marker in México"));
+        mMap.addMarker(new MarkerOptions().title("México").position(mexico).snippet("Mi Ciudad"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mexico, 13));
     }
 
 
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        System.out.println("Inmobilia onActivity result");
         if (requestCode == 100 && resultCode == RESULT_OK) {
-            mImageView.setImageURI(Uri.fromFile(photoFile));
+
+            Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
+
+            // Hay que salvar el bitmap a disco
+            File savedBitmap = createImageFile(carpetaPropiedades);
+            FileOutputStream out = null;
+            try {
+                out = new FileOutputStream(savedBitmap);
+                imageBitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+                // PNG is a lossless format, the compression factor (100) is ignored
+            } catch (Exception e) {
+                System.out.println("Inmobilia error while writing a image to disk");
+            } finally {
+                try {
+                    if (out != null) {
+                        out.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            setPic(savedBitmap.toString(), mImageView);
+
+            // Hay que almacenar el nombre del archivo en SQLite junto con los datos del inmueble
+
+            //String path = photoFile.getAbsolutePath();
+            //Bitmap bitmap;
+
+            //bitmap = BitmapFactory.decodeFile(path);
+            //int bAlto = bitmap.getHeight();
+            //int bAncho = bitmap.getWidth();
+
+            //float scale = Math.min((float) 150.0 / (float) bAlto, (float) 150.0 / (float) bAncho);
+            //Bitmap chico = Bitmap.createScaledBitmap(bitmap,(int)(bAncho*scale), (int)(bAlto*scale), true);
+            //mImageView.setImageBitmap(chico);
+
         }
     }
 
-    private File createImageFile()  {
+    private File createImageFile(String filePath) {  // Crea el path unico para almacenar una imagen
         // Create an image file name
         // the image will be stored in the DCIM directory
         GregorianCalendar calendar = new GregorianCalendar();
         calendar.setTimeZone(TimeZone.getDefault());
         long dateTaken = calendar.getTimeInMillis();
 
-        File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getAbsolutePath() + "/Camera/");
-        if (!dir.exists()) dir.mkdirs();
+        // File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getAbsolutePath() + "/Camera/");
+        File dir = new File(filePath + "/");
         final File photoFile = new File(dir, DateFormat.format("yyyyMMdd_kkmmss", dateTaken).toString() + ".jpg");
 
         return photoFile;
@@ -180,5 +209,61 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         final File photoFile = new File("/storage/emulated/0/DCIM/Camera/", "20161031_151205.jpg");
 
         return photoFile;
+    }
+
+    private String verificarCrearCarpeta(String dirname) {
+        String dir = "unknown";
+        PackageManager m = getPackageManager();
+        String packageName = getPackageName();
+        try {
+            PackageInfo p = m.getPackageInfo(packageName, 0);
+            dir = p.applicationInfo.dataDir;
+        } catch (PackageManager.NameNotFoundException e) {
+            System.out.println(packageName + " Error Package name not found ");
+            return null;
+        }
+
+        System.out.println("Inmobilia app directory " + dir);
+        dir = dir + "/" + dirname;
+        System.out.println("Inmobilia property directory " + dir);
+        File f = new File(dir);
+
+        // Comprobamos si la carpeta está ya creada
+        // Si la carpeta no está creada, la creamos.
+        if(!f.isDirectory()) {
+            System.out.println("Inmobilia creating directory");
+            File myNewFolder = new File(dir);
+            myNewFolder.mkdir(); //creamos la carpeta
+        }
+        if (f.isDirectory()) {
+            System.out.println("Inmobilia directory exist");
+        }
+        return dir;
+    }
+
+    private void setPic(String mCurrentPhotoFilePath, ImageView mImageView) {
+        // Get the dimensions of the View
+        Display display = getWindowManager().getDefaultDisplay();  // Recuperamos las características del display
+        Point size = new Point();;
+        display.getSize(size); // size contiene el tamaño del display en pixels
+        int imageSize = (int) (Math.min(size.x,size.y) / 3); // el tamaño de la imagen sera una tercera parte del lado mas corto
+
+        // Get the dimensions of the bitmap
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        bmOptions.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(mCurrentPhotoFilePath, bmOptions);
+        int photoW = bmOptions.outWidth;
+        int photoH = bmOptions.outHeight;
+
+        // Determine how much to scale down the image
+        int scaleFactor = Math.min(photoW/imageSize, photoH/imageSize);
+
+        // Decode the image file into a Bitmap sized to fill the View
+        bmOptions.inJustDecodeBounds = false;
+        bmOptions.inSampleSize = scaleFactor;
+        bmOptions.inPurgeable = true;
+
+        Bitmap bitmap = BitmapFactory.decodeFile(mCurrentPhotoFilePath, bmOptions);
+        mImageView.setImageBitmap(bitmap);
     }
 }
