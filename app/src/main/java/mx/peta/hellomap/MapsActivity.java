@@ -90,39 +90,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        /*
-        String path = testCreateImageFile().getAbsolutePath();
-        Bitmap bitmap;
-
-        bitmap = BitmapFactory.decodeFile(path);
-        int bAlto = bitmap.getHeight();
-        int bAncho = bitmap.getWidth();
-
-        float scale = Math.min((float) 150.0 / (float) bAlto, (float) 150.0 / (float) bAncho);
-        Bitmap chico = Bitmap.createScaledBitmap(bitmap,(int)(bAncho*scale), (int)(bAlto*scale), true);
-        mImageView.setImageBitmap(chico);
-        */
-
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         // Se verifica si hay una aplicacion que pueda tomar la foto
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            // se crea el archivo donde se guardara la foto
-            //photoFile = createImageFile();
-
-            //if (photoFile != null) {
-            //    Uri photoURI = Uri.fromFile(photoFile);
-            //Toast.makeText(getApplicationContext(),  photoURI.toString(),Toast.LENGTH_LONG).show();
-            //    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-            //}
             ++count;
             System.out.println("Inmobilia mainActivity.onCreate count = " + count);
             startActivityForResult(takePictureIntent, 100);
         }
-
-        // creamos la carpeta en donde vamos a guardar los thumbnail
-
     }
-
 
     /**
      * Manipulates the map once available.
@@ -137,8 +112,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
-        //mMap.setMyLocationEnabled(true);
+        // Add a marker in Mexico and move the camera
         LatLng mexico = new LatLng(19.341822116645, -99.183682);
         mMap.addMarker(new MarkerOptions().title("México").position(mexico).snippet("Mi Ciudad"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mexico, 13));
@@ -174,18 +148,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             setPic(savedBitmap.toString(), mImageView);
 
             // Hay que almacenar el nombre del archivo en SQLite junto con los datos del inmueble
-
-            //String path = photoFile.getAbsolutePath();
-            //Bitmap bitmap;
-
-            //bitmap = BitmapFactory.decodeFile(path);
-            //int bAlto = bitmap.getHeight();
-            //int bAncho = bitmap.getWidth();
-
-            //float scale = Math.min((float) 150.0 / (float) bAlto, (float) 150.0 / (float) bAncho);
-            //Bitmap chico = Bitmap.createScaledBitmap(bitmap,(int)(bAncho*scale), (int)(bAlto*scale), true);
-            //mImageView.setImageBitmap(chico);
-
         }
     }
 
@@ -196,17 +158,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         calendar.setTimeZone(TimeZone.getDefault());
         long dateTaken = calendar.getTimeInMillis();
 
-        // File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getAbsolutePath() + "/Camera/");
         File dir = new File(filePath + "/");
         final File photoFile = new File(dir, DateFormat.format("yyyyMMdd_kkmmss", dateTaken).toString() + ".jpg");
-
-        return photoFile;
-    }
-
-    private File testCreateImageFile() {
-        File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getAbsolutePath() + "/Camera/");
-        if (!dir.exists()) dir.mkdirs();
-        final File photoFile = new File("/storage/emulated/0/DCIM/Camera/", "20161031_151205.jpg");
 
         return photoFile;
     }

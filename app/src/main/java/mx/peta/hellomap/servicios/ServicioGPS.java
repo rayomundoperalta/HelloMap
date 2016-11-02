@@ -44,6 +44,14 @@ public class ServicioGPS extends Service implements LocationListener{
         texto.setText("Coordenadas:" + latitud + ", " + longitud);
     }
 
+    public LatLong getLatLong() {
+        LatLong latLong = new LatLong();
+
+        latLong.setLatitud(this.latitud);
+        latLong.setLongitud(this.longitud);
+        return latLong;
+    }
+
     public void getLocation() {
         try {
             locationManager = (LocationManager) this.ctx.getSystemService(LOCATION_SERVICE);
